@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <title>Lendflow Challenge</title>
+</head>
+
+<body>
+  <div class="container mt-2">
+    <h1 id="lendflow-devops-assessment">Lendflow DevOps Assessment</h1>
+    <h1 id="goal">Goal</h1>
+    <p>Create a script or IaC-powered method to deploy a containerized webserver to AWS, as well as a script to check
+      that the service is running and publicly available.</p>
+    <h1 id="overview">Overview</h1>
+    <p>I chose to complete this assessment using Terraform because I&#39;m the most familiar with it as
+      an IAC tool and I&#39;m really excited to use it wherever I can.</p>
+    <p>My Terraform configuration is pretty simple. I chose to leave everything in a single <code>main.tf</code>
+      file because the resources are all related and there are not many of them.</p>
+    <p>In my opinion, <code>make</code> makes (ha) prototype tooling for repositories like this one pretty easy. In the
+      case of Terraform, <code>make</code>s&#39; dependency support makes ensuring that the <code>apply</code> process
+      is executed in the appropriate order (from <code>init</code> to <code>plan</code> to <code>apply</code>) a breeze.
+      You&#39;ll find a <code>Makefile</code> at the root of this repository with some straightforward commands
+      configured.</p>
+    <h1 id="you-ll-need">You&#39;ll need</h1>
+    <ul>
+      <li>To clone this repository by running:</li>
+    </ul>
+    <pre><code class="lang-bash">$ git <span class="hljs-keyword">clone</span> <span class="hljs-title">https</span>://elliottmoos@bitbucket.org/elliottmoos/devops-challenge.git
+</code></pre>
+    <ul>
+      <li>Have <code>make</code> installed - This is pre-installed on most machines but if you don&#39;t have it check
+        these places for instructions on how to install it:<ul>
+          <li><a href="https://stackoverflow.com/questions/10265742/how-to-install-make-and-gcc-on-a-mac">MacOS</a></li>
+          <li><a
+              href="https://stackoverflow.com/questions/11934997/how-to-install-make-in-ubuntu">Linux(Ubuntu/Debian)</a>
+          </li>
+        </ul>
+      </li>
+      <li>Terraform version 1.0.0 or greater - You can run <code>make tools</code> in the root of this repository if you
+        have <a href="https://brew.sh/">Homebrew</a> installed on MacOS. Otherwise check the <a
+          href="https://learn.hashicorp.com/tutorials/terraform/install-cli">docs</a> for installation instructions.
+      </li>
+      <li>AWS credential env vars set - Values provided by me if you&#39;re one of the folks evaluating this entry.<ul>
+          <li>AWS_ACCESS_KEY_ID</li>
+          <li>AWS_SECRET_ACCESS_KEY</li>
+        </ul>
+      </li>
+    </ul>
+    <h1 id="directory-structure">Directory Structure</h1>
+    <ul>
+      <li>app:<ul>
+          <li>This houses a copy of the <code>Dockerfile</code> I used to build the lightly customized nginx image used
+            in the deployment. I haven&#39;t included tooling around building and pushing this image as I felt it was
+            just outside the scope of this assessment. However, I can make a change if that is desired.</li>
+          <li>You&#39;ll also find an <code>html</code> directory with an <code>index.html</code> and
+            <code>favicon.ico</code> file in it. These are the assets I replace the default nginx image assets with.
+          </li>
+        </ul>
+      </li>
+      <li>terraform:<ul>
+          <li>I put the json template for the web service ecs task definition in an <code>ecs_task_definitions</code>
+            directory to show how I might organize them in a normal circumstance.</li>
+          <li>The rest of the files should look pretty familiar if you&#39;ve worked with Terraform before:<ul>
+              <li>input.tf: Variable declarations. We pass the corresponding values in main.tfvars to these when
+                planning or applying or destroying via the <code>-var-file</code> option.</li>
+              <li>main.tf: Configuration code including resources and data sources.</li>
+              <li>main.tfvars: Terraform variable values</li>
+              <li>output.tf: Just one value: The application load balancers&#39; DNS name interpolated into a url that
+                should be passed to the service-check script.</li>
+              <li>terraform.tfstate: Terraform state file. Named pretty well.</li>
+              <li>versions.tf: Specifies the required version constraint for the Terraform CLI in this case.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>Makefile:<ul>
+          <li>This is definitely old tech but it&#39;s reliable and gets the job done</li>
+          <li>You&#39;ll find a few commands that will help keep the clutter off of the command line:<ul>
+              <li><code>tools</code>: Installs latest Terraform CLI on MacOS via Homebrew (optional)</li>
+              <li><code>terraform-init</code>: Initializes the Terraform environment and installs the required providers
+              </li>
+              <li><code>terraform-validate</code>: Depends on <code>terraform-init</code>. Validates the syntax of your
+                HCL</li>
+              <li><code>terraform-plan</code>: Depends on <code>terraform-init</code>. Creates binary Terraform plan
+                used by terraform apply.</li>
+              <li><code>terraform-apply</code>: Depends on <code>terraform-plan</code>. Applies binary plan.</li>
+              <li><code>terraform-destroy</code>: Tears everything down</li>
+              <li><code>service-check</code>: Requires a <code>url</code> env var declaration. Passes the url to the
+                <code>service-check.sh</code> bash script.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>service-check.sh:<ul>
+          <li>Takes a url, makes a GET request via <code>curl</code> and greps the response for a 200 status code.</li>
+          <li>Returns an UP message if successful and a DOWN message if not.</li>
+        </ul>
+      </li>
+    </ul>
+    <h1 id="provisioning">Provisioning</h1>
+    <ol>
+      <li>Ensure required env vars are set and tools are installed</li>
+      <li>Replace <code>vpc_id</code>, <code>subnet_a_id</code>, and <code>subnet_b_id</code> variable values in
+        <code>main.tfvars</code> if deploying into an AWS account other than mine</li>
+      <li><code>make terraform-apply</code></li>
+      <li>Copy the <code>web_service_url</code> output value from the Terraform apply report to pass to <code>make
+          service-check</code></li>
+    </ol>
+    <h1 id="checking-web-service-health">Checking web service health</h1>
+    <ol>
+      <li><code>make service-check url={web_service_url copied from the provisioning step}</code>
+        <blockquote>
+          <p>If all went well, you should see &quot;Lendflow Challenge web service is UP!&quot; on the command line.
+            If not, &quot;Lendflow Challenge web service is NOT READY or DOWN:(&quot;.</p>
+        </blockquote>
+      </li>
+    </ol>
+    <h1 id="tearing-it-all-down">Tearing it all down</h1>
+    <ol>
+      <li><code>make terraform-destroy</code></li>
+    </ol>
+
+  </div>
+</body>
+
+</html>
