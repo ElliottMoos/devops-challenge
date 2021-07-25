@@ -1,4 +1,4 @@
-# Lendflow DevOps Assessment
+# Lendflow DevOps Challenge
 
 # Goal
 
@@ -19,10 +19,10 @@ In my opinion, `make` makes (ha) prototype tooling for repositories like this on
 - To clone this repository by running:
 
 ```bash
-$ git clone https://elliottmoos@bitbucket.org/elliottmoos/devops-challenge.git
+$ git clone https://github.com/ElliottMoos/devops-challenge.git
 ```
 
-- Have `make` installed - This is pre-installed on most machines but if you don't have it check these places for instructions on how to install it:
+- `make` installed - This is pre-installed on most machines but if you don't have it check these places for instructions on how to install it:
   - [MacOS](https://stackoverflow.com/questions/10265742/how-to-install-make-and-gcc-on-a-mac)
   - [Linux(Ubuntu/Debian)](https://stackoverflow.com/questions/11934997/how-to-install-make-in-ubuntu)
 - Terraform version 1.0.0 or greater - You can run `make tools` in the root of this repository if you have [Homebrew](https://brew.sh/) installed on MacOS. Otherwise check the [docs](https://learn.hashicorp.com/tutorials/terraform/install-cli) for installation instructions.
